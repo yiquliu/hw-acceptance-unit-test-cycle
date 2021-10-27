@@ -17,15 +17,16 @@ RSpec.describe MoviesController, type: :controller do
   
   describe "when trying to find movies by the same director" do
     it "returns a valid collection when a valid director is present" do
-      get :show_by_director, {:id => Movie.find_by_title("Iron Man")}
+      get :same_director, {:id => Movie.find_by_title("Iron Man").id}
       expect(assigns(:movies)).to eq([Movie.find_by_title("Spider-Man: Homecoming")])
-      expect(response).to render_template "show_by_director"
+      expect(response).to render_template "same_director"
     end
     
     it "redirects to index with a warning when no director is present" do
-      get :show_by_director, {:id => Movie.find_by_title("Big Hero 6")}
+      get :same_director, {:id => Movie.find_by_title("Big Hero 6")}
+      expect(flash[:notice]).to match(/'Big Hero 6' has no director info/)
+
       expect(response).to redirect_to movies_path
-      expect(flash[:warning]).to match(/'Big Hero 6' has no director info/) 
     end
   end
   
@@ -38,7 +39,28 @@ RSpec.describe MoviesController, type: :controller do
       Movie.find_by(:title => "Toucan Play This Game").destroy
     end
   end
-  
+
+  describe "show" do
+    it "shows a specific movie" do
+      get :show, :id => 1
+      expect(assigns(:movie)).to eq(Movie.find(1))
+    end
+  end
+
+  describe "index" do
+    it "shows all movies" do
+      get :index
+      expect(assigns(:movies)).to eq(Movie.all)
+    end
+  end
+
+  describe "edit" do
+    it "edits a movie" do
+      get :edit, :id => 1
+      expect(assigns(:movie)).to eq(Movie.find(1))
+    end
+  end
+
   describe "updates" do
     it "movie's valid attributes" do
       movie = Movie.create(:title => "Outfoxed!", :director => "Nick Mecklenburg",
@@ -53,6 +75,17 @@ RSpec.describe MoviesController, type: :controller do
       expect(response).to redirect_to movie_path(movie)
       expect(flash[:notice]).to match(/Outfoxed! was successfully updated./)
       movie.destroy
+    end
+  end
+  
+  describe "destroy" do
+    it "deletes a movie from list" do
+      movie = Movie.create(:title => "Outfoxed!", :director => "Nick Mecklenburg",
+                           :rating => "PG-13", :release_date => "2023-12-17")
+      delete :destroy, {:id => movie.id}
+      
+      expect(response).to redirect_to movies_path
+      expect(flash[:notice]).to match("Movie 'Outfoxed!' deleted.")
     end
   end
 end
